@@ -1,6 +1,3 @@
-/**
- * Letter to number conversion table for IBAN validation
- */
 const LETTER_TO_NUMBER = {
   A: 10,
   B: 11,
@@ -30,9 +27,6 @@ const LETTER_TO_NUMBER = {
   Z: 35,
 };
 
-/**
- * Known Romanian bank codes (BIC prefixes)
- */
 const ROMANIAN_BANK_CODES = [
   "RNCB",
   "BRDE",
@@ -61,9 +55,6 @@ const ROMANIAN_BANK_CODES = [
   "REVO",
 ];
 
-/**
- * Performs BigInt modulo 97 operation for large numbers
- */
 function bigIntMod97(numStr) {
   let remainder = 0n;
 
@@ -74,9 +65,6 @@ function bigIntMod97(numStr) {
   return Number(remainder);
 }
 
-/**
- * Converts letters to numbers according to IBAN specification
- */
 function convertLettersToNumbers(str) {
   return str
     .split("")
@@ -89,33 +77,21 @@ function convertLettersToNumbers(str) {
     .join("");
 }
 
-/**
- * Formats IBAN with spaces for display (RO49 AAAA 1B31 0075 9384 0000)
- */
 function formatIban(iban) {
   if (!iban) return "";
 
-  // Remove all spaces and convert to uppercase
   const cleanIban = iban.replace(/\s/g, "").toUpperCase();
 
-  // Add spaces every 4 characters
   return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 }
 
-/**
- * Removes formatting from IBAN (spaces, hyphens)
- */
 function cleanIban(iban) {
   return iban.replace(/[\s-]/g, "").toUpperCase();
 }
 
-/**
- * Validates Romanian IBAN structure
- */
 function validateRomanianIbanStructure(iban) {
   const cleanedIban = cleanIban(iban);
 
-  // Check length (24 characters for Romanian IBAN)
   if (cleanedIban.length !== 24) {
     return {
       isValid: false,
@@ -123,7 +99,6 @@ function validateRomanianIbanStructure(iban) {
     };
   }
 
-  // Check country code
   if (!cleanedIban.startsWith("RO")) {
     return {
       isValid: false,
@@ -131,7 +106,6 @@ function validateRomanianIbanStructure(iban) {
     };
   }
 
-  // Check check digits (positions 2-3) are numeric
   const checkDigits = cleanedIban.substring(2, 4);
   if (!/^\d{2}$/.test(checkDigits)) {
     return {
@@ -140,7 +114,6 @@ function validateRomanianIbanStructure(iban) {
     };
   }
 
-  // Check bank code (positions 4-7) are letters
   const bankCode = cleanedIban.substring(4, 8);
   if (!/^[A-Z]{4}$/.test(bankCode)) {
     return {
@@ -149,7 +122,6 @@ function validateRomanianIbanStructure(iban) {
     };
   }
 
-  // Check account identifier (positions 8-23) are alphanumeric
   const accountId = cleanedIban.substring(8);
   if (!/^[A-Z0-9]{16}$/.test(accountId)) {
     return {
@@ -161,50 +133,33 @@ function validateRomanianIbanStructure(iban) {
   return { isValid: true };
 }
 
-/**
- * Calculates IBAN check digits
- */
+
 function calculateIbanCheckDigits(countryCode, bankCode, accountId) {
-  // Step 1: Create artificial IBAN with 00 as check digits
   const artificialIban = `${countryCode}00${bankCode}${accountId}`;
 
-  // Step 2: Move first 4 characters to the end
   const rearranged =
     artificialIban.substring(4) + artificialIban.substring(0, 4);
 
-  // Step 3: Convert letters to numbers
   const numericString = convertLettersToNumbers(rearranged);
 
-  // Step 4: Apply MOD 97-10 algorithm
   const remainder = bigIntMod97(numericString);
   const checkDigits = 98 - remainder;
 
-  // Return with leading zero if needed
   return checkDigits.toString().padStart(2, "0");
 }
 
-/**
- * Validates IBAN checksum using MOD 97-10 algorithm
- */
 function validateIbanChecksum(iban) {
   const cleanedIban = cleanIban(iban);
 
-  // Step 1: Move first 4 characters to the end
   const rearranged = cleanedIban.substring(4) + cleanedIban.substring(0, 4);
 
-  // Step 2: Convert letters to numbers
   const numericString = convertLettersToNumbers(rearranged);
 
-  // Step 3: Apply MOD 97-10 algorithm
   const remainder = bigIntMod97(numericString);
 
-  // For valid IBAN, remainder should be 1
   return remainder === 1;
 }
 
-/**
- * Complete IBAN validation
- */
 function validateIban(iban) {
   if (!iban) {
     return {
@@ -215,17 +170,14 @@ function validateIban(iban) {
 
   const cleanedIban = cleanIban(iban);
 
-  // Check basic structure
   const structureValidation = validateRomanianIbanStructure(cleanedIban);
   if (!structureValidation.isValid) {
     return structureValidation;
   }
 
-  // Check if bank code is known (warning, not error)
   const bankCode = cleanedIban.substring(4, 8);
   const isKnownBank = ROMANIAN_BANK_CODES.includes(bankCode);
 
-  // Validate checksum
   const checksumValid = validateIbanChecksum(cleanedIban);
   if (!checksumValid) {
     return {
@@ -244,17 +196,13 @@ function validateIban(iban) {
   };
 }
 
-/**
- * Real-time validation for input fields
- */
 function validateIbanRealTime(iban) {
   if (!iban) {
-    return { isValid: true, error: null }; // Empty is valid for real-time
+    return { isValid: true, error: null };
   }
 
   const cleanedIban = cleanIban(iban);
 
-  // Check country code if enough characters
   if (cleanedIban.length >= 2 && !cleanedIban.startsWith("RO")) {
     return {
       isValid: false,
@@ -262,7 +210,6 @@ function validateIbanRealTime(iban) {
     };
   }
 
-  // Check check digits if enough characters
   if (cleanedIban.length >= 4) {
     const checkDigits = cleanedIban.substring(2, 4);
     if (!/^\d{2}$/.test(checkDigits)) {
@@ -273,7 +220,6 @@ function validateIbanRealTime(iban) {
     }
   }
 
-  // Check bank code if enough characters
   if (cleanedIban.length >= 8) {
     const bankCode = cleanedIban.substring(4, 8);
     if (!/^[A-Z]{4}$/.test(bankCode)) {
@@ -284,7 +230,6 @@ function validateIbanRealTime(iban) {
     }
   }
 
-  // Check account identifier characters
   if (cleanedIban.length > 8) {
     const accountPart = cleanedIban.substring(8);
     if (!/^[A-Z0-9]*$/.test(accountPart)) {
@@ -295,7 +240,6 @@ function validateIbanRealTime(iban) {
     }
   }
 
-  // Check maximum length
   if (cleanedIban.length > 24) {
     return {
       isValid: false,
@@ -303,7 +247,6 @@ function validateIbanRealTime(iban) {
     };
   }
 
-  // If we have complete IBAN, validate checksum
   if (cleanedIban.length === 24) {
     return validateIban(cleanedIban);
   }
@@ -324,7 +267,6 @@ module.exports = {
 if (require.main === module) {
   const args = process.argv.slice(2);
 
-  // Show help if no arguments or help flag provided
   if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
     console.log(`
 IBAN Validation Tool
@@ -399,7 +341,6 @@ Examples:
       console.log(`Complete IBAN: ${calculatedIban}`);
       console.log(`Formatted: ${formatIban(calculatedIban)}`);
 
-      // Validate the generated IBAN as a sanity check
       const checkResult = validateIbanChecksum(calculatedIban);
       if (checkResult) {
         console.log("✅ Checksum verification passed");
